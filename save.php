@@ -1,6 +1,6 @@
 <?php
 include 'db.php';
-
+date_default_timezone_set("Asia/Kolkata");
 $s1 = $_GET['s1'] ?? 0;
 $s2 = $_GET['s2'] ?? 0;
 $s3 = $_GET['s3'] ?? 0;
