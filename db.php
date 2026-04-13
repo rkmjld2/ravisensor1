@@ -7,7 +7,7 @@ $pass = "EP8isIWoEOQk7DSr";
 $dbname = "sensor";
 
 $conn = mysqli_init();
-
+date_default_timezone_set("Asia/Kolkata");
 // SSL connection
 mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
 
