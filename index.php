@@ -43,7 +43,9 @@ foreach($data as $row){
 <style>
 body{font-family:Arial;background:#f4f6f8;padding:20px;}
 .card{background:white;padding:15px;margin-bottom:20px;border-radius:10px;}
-button{padding:10px;margin:5px;background:#007bff;color:white;border:none;}
+button{padding:10px;margin:5px;border:none;color:white;border-radius:5px;}
+.on{background:green;}
+.off{background:red;}
 table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 </style>
@@ -60,11 +62,12 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 </div>
 
 <div class="card">
-<h2>🎛 Control</h2>
-<button onclick="send(1,0,0)">Pin1</button>
-<button onclick="send(0,1,0)">Pin2</button>
-<button onclick="send(0,0,1)">Pin3</button>
-<button onclick="send(0,0,0)">All OFF</button>
+<h2>🎛 8 Channel Control</h2>
+
+<div id="buttons"></div>
+
+<button onclick="allOff()" style="background:black;">All OFF</button>
+
 </div>
 
 <div class="card">
@@ -92,10 +95,57 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 </div>
 
 <script>
-function send(p1,p2,p3){
-    fetch(`control.php?set=1&p1=${p1}&p2=${p2}&p3=${p3}`)
+
+// 8 PIN STATE
+let state = [0,0,0,0,0,0,0,0];
+
+// CREATE BUTTONS
+let container = document.getElementById("buttons");
+
+for(let i=0;i<8;i++){
+    let btn = document.createElement("button");
+    btn.innerHTML = "D"+(i+1);
+    btn.className = "off";
+
+    btn.onclick = function(){
+        state[i] = state[i] ? 0 : 1;
+        updateButtons();
+        send();
+    };
+
+    btn.id = "btn"+i;
+    container.appendChild(btn);
 }
 
+// UPDATE BUTTON COLORS
+function updateButtons(){
+    for(let i=0;i<8;i++){
+        let btn = document.getElementById("btn"+i);
+        btn.className = state[i] ? "on" : "off";
+    }
+}
+
+// SEND FULL STATE
+function send(){
+    fetch(`control.php?set=1
+        &p1=${state[0]}
+        &p2=${state[1]}
+        &p3=${state[2]}
+        &p4=${state[3]}
+        &p5=${state[4]}
+        &p6=${state[5]}
+        &p7=${state[6]}
+        &p8=${state[7]}`);
+}
+
+// ALL OFF
+function allOff(){
+    state = [0,0,0,0,0,0,0,0];
+    updateButtons();
+    send();
+}
+
+// GRAPH
 new Chart(document.getElementById('chart'),{
     type:'line',
     data:{
