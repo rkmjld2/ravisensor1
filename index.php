@@ -8,7 +8,7 @@ $last = $res->fetch_assoc();
 $status = "DISCONNECTED";
 
 if($last){
-    if(time() - strtotime($last['timestamp']) < 15){
+    if(time() - strtotime($last['timestamp']) < 60){
         $status = "CONNECTED";
     }
 }
