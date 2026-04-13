@@ -1,14 +1,17 @@
 <?php
 include 'db.php';
 
-// Create table
+// Create table (8 pins)
 $conn->query("CREATE TABLE IF NOT EXISTS control (
     id INT PRIMARY KEY,
     p1 INT, p2 INT, p3 INT, p4 INT,
     p5 INT, p6 INT, p7 INT, p8 INT
 )");
 
-$conn->query("INSERT IGNORE INTO control VALUES (1,0,0,0,0,0,0,0,0)");
+// Insert default row (ONLY if not exists)
+$conn->query("INSERT IGNORE INTO control 
+(id, p1,p2,p3,p4,p5,p6,p7,p8) 
+VALUES (1,0,0,0,0,0,0,0,0)");
 
 // SET values
 if(isset($_GET['set']))
