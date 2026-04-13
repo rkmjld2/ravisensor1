@@ -8,7 +8,7 @@ $last = $res->fetch_assoc();
 $status = "DISCONNECTED";
 
 if($last){
-    if(time() - strtotime($last['timestamp']) < 15){
+    if(time() - strtotime($last['timestamp']) < 30){  // 🔴 FIXED (15 → 30)
         $status = "CONNECTED";
     }
 }
@@ -43,7 +43,9 @@ foreach($data as $row){
 <style>
 body{font-family:Arial;background:#f4f6f8;padding:20px;}
 .card{background:white;padding:15px;margin-bottom:20px;border-radius:10px;}
-button{padding:10px;margin:5px;background:#007bff;color:white;border:none;}
+button{padding:10px;margin:5px;border:none;color:white;border-radius:5px;}
+.on{background:green;}
+.off{background:red;}
 table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 </style>
@@ -60,11 +62,13 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 </div>
 
 <div class="card">
-<h2>🎛 Control</h2>
-<button onclick="send(1,0,0)">Pin1</button>
-<button onclick="send(0,1,0)">Pin2</button>
-<button onclick="send(0,0,1)">Pin3</button>
-<button onclick="send(0,0,0)">All OFF</button>
+<h2>🎛 8 Channel Control</h2>
+
+<!-- ✅ IMPORTANT (WAS MISSING) -->
+<div id="buttons"></div>
+
+<button onclick="allOff()" style="background:black;">All OFF</button>
+
 </div>
 
 <div class="card">
@@ -116,18 +120,15 @@ for(let i=0;i<8;i++){
     container.appendChild(btn);
 }
 
-// TOGGLE PIN (CORRECT LOGIC)
+// TOGGLE PIN
 async function togglePin(i){
-
-    let state = await getState();   // ✅ GET CURRENT SERVER STATE
-
-    state[i] = state[i] ? 0 : 1;    // toggle only one pin
-
+    let state = await getState();
+    state[i] = state[i] ? 0 : 1;
     send(state);
     updateButtons(state);
 }
 
-// SEND FULL STATE
+// SEND STATE
 function send(state){
     fetch(`control.php?set=1
         &p1=${state[0]}
@@ -140,7 +141,7 @@ function send(state){
         &p8=${state[7]}`);
 }
 
-// UPDATE BUTTON COLORS
+// UPDATE BUTTON UI
 function updateButtons(state){
     for(let i=0;i<8;i++){
         let btn = document.getElementById("btn"+i);
@@ -148,7 +149,7 @@ function updateButtons(state){
     }
 }
 
-// LOAD INITIAL STATE
+// INIT LOAD
 async function init(){
     let state = await getState();
     updateButtons(state);
@@ -161,7 +162,7 @@ function allOff(){
     updateButtons(state);
 }
 
-// AUTO REFRESH BUTTON STATUS
+// AUTO REFRESH
 setInterval(async ()=>{
     let state = await getState();
     updateButtons(state);
@@ -170,7 +171,7 @@ setInterval(async ()=>{
 // INIT
 init();
 
-// GRAPH (unchanged)
+// GRAPH
 new Chart(document.getElementById('chart'),{
     type:'line',
     data:{
@@ -178,7 +179,8 @@ new Chart(document.getElementById('chart'),{
         datasets:[
             {label:'S1',data: <?= json_encode($s1) ?>},
             {label:'S2',data: <?= json_encode($s2) ?>},
-            {label:'S3',data: <?= json_encode($s3) ?>}
+            {label:'S3',data: <?= json_encode($s3) ?>
+}
         ]
     }
 });
