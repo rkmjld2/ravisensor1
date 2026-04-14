@@ -1,19 +1,22 @@
 <?php
 include 'db.php';
 
-// ================= STATUS (FIXED USING SQL TIME) =================
+// ================= STATUS (ID CHANGE METHOD - FINAL FIX) =================
 $status = "DISCONNECTED";
 
-$res = $conn->query("
-SELECT *, TIMESTAMPDIFF(SECOND, timestamp, NOW()) as diff 
-FROM sensor_db 
-ORDER BY id DESC LIMIT 1
-");
-
+$res = $conn->query("SELECT id FROM sensor_db ORDER BY id DESC LIMIT 1");
 $last = $res->fetch_assoc();
 
 if($last){
-    if($last['diff'] < 120){
+    $last_id = $last['id'];
+
+    // small delay to check new data
+    usleep(500000); // 0.5 second
+
+    $res2 = $conn->query("SELECT id FROM sensor_db ORDER BY id DESC LIMIT 1");
+    $new = $res2->fetch_assoc();
+
+    if($new['id'] > $last_id){
         $status = "CONNECTED";
     }
 }
@@ -83,7 +86,7 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 <h2>📊 Data</h2>
 
 <table>
-<tr><th>ID</th><th>S1</th><th>S2</th><th>S3</th><th>Time</th></tr>
+<tr><th>ID</th><th>S1</th><th>S2</th><th>S3</th><th>Time (IST)</th></tr>
 
 <?php foreach(array_reverse($data) as $row): ?>
 <tr>
@@ -100,12 +103,13 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 
 <script>
 
-// CORRECT PIN LABELS (MATCH ESP CODE)
+// PIN LABELS (MATCH ESP)
 let labels = ["D1","D2","D5","D6","D7","D8","D0","D4"];
 
 let buttons = [];
+let currentState = [0,0,0,0,0,0,0,0];
 
-// CREATE BUTTONS ONLY ONCE (NO BLINK)
+// CREATE BUTTONS
 let container = document.getElementById("buttons");
 
 for(let i=0;i<8;i++){
@@ -122,22 +126,22 @@ for(let i=0;i<8;i++){
     buttons.push(btn);
 }
 
-// GET STATE FROM SERVER
+// GET STATE
 async function getState(){
     let res = await fetch("control.php");
     let text = await res.text();
     return text.split(",").map(Number);
 }
 
-// TOGGLE PIN
-async function togglePin(i){
-    let state = await getState();
-    state[i] = state[i] ? 0 : 1;
-    send(state);
-    updateButtons(state);
+// FAST TOGGLE (NO DELAY)
+function togglePin(i){
+    currentState[i] = currentState[i] ? 0 : 1;
+
+    updateButtons(currentState);   // instant UI
+    send(currentState);            // background send
 }
 
-// SEND STATE
+// SEND
 function send(state){
     fetch(`control.php?set=1
         &p1=${state[0]}
@@ -150,30 +154,30 @@ function send(state){
         &p8=${state[7]}`);
 }
 
-// UPDATE BUTTON COLORS
+// UPDATE UI
 function updateButtons(state){
     for(let i=0;i<8;i++){
         buttons[i].className = state[i] ? "on" : "off";
     }
 }
 
-// INITIAL LOAD
+// INIT LOAD
 async function init(){
-    let state = await getState();
-    updateButtons(state);
+    currentState = await getState();
+    updateButtons(currentState);
 }
 
-// AUTO SYNC (NO PAGE REFRESH → NO BLINK)
+// AUTO SYNC
 setInterval(async ()=>{
-    let state = await getState();
-    updateButtons(state);
+    currentState = await getState();
+    updateButtons(currentState);
 }, 2000);
 
 // ALL OFF
 function allOff(){
-    let state = [0,0,0,0,0,0,0,0];
-    send(state);
-    updateButtons(state);
+    currentState = [0,0,0,0,0,0,0,0];
+    send(currentState);
+    updateButtons(currentState);
 }
 
 init();
