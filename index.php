@@ -1,19 +1,24 @@
 <?php
 include 'db.php';
 
-// Last record for status
-$res = $conn->query("SELECT * FROM sensor_db ORDER BY id DESC LIMIT 1");
-$last = $res->fetch_assoc();
-
+// ================= STATUS (FIXED USING SQL TIME) =================
 $status = "DISCONNECTED";
 
+$res = $conn->query("
+SELECT *, TIMESTAMPDIFF(SECOND, timestamp, NOW()) as diff 
+FROM sensor_db 
+ORDER BY id DESC LIMIT 1
+");
+
+$last = $res->fetch_assoc();
+
 if($last){
-    if(time() - strtotime($last['timestamp']) < 30){  // 🔴 FIXED (15 → 30)
+    if($last['diff'] < 120){
         $status = "CONNECTED";
     }
 }
 
-// Data for graph
+// ================= GRAPH DATA =================
 $result = $conn->query("SELECT * FROM sensor_db ORDER BY id DESC LIMIT 50");
 
 $data = [];
@@ -38,7 +43,6 @@ foreach($data as $row){
 <head>
 <title>Sensor Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<meta http-equiv="refresh" content="10">
 
 <style>
 body{font-family:Arial;background:#f4f6f8;padding:20px;}
@@ -64,7 +68,6 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 <div class="card">
 <h2>🎛 8 Channel Control</h2>
 
-<!-- ✅ IMPORTANT (WAS MISSING) -->
 <div id="buttons"></div>
 
 <button onclick="allOff()" style="background:black;">All OFF</button>
@@ -97,19 +100,17 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 
 <script>
 
-// FETCH CURRENT STATE FROM SERVER
-async function getState(){
-    let res = await fetch("control.php");
-    let text = await res.text();
-    return text.split(",").map(Number);
-}
+// CORRECT PIN LABELS (MATCH ESP CODE)
+let labels = ["D1","D2","D5","D6","D7","D8","D0","D4"];
 
-// CREATE BUTTONS
+let buttons = [];
+
+// CREATE BUTTONS ONLY ONCE (NO BLINK)
 let container = document.getElementById("buttons");
 
 for(let i=0;i<8;i++){
     let btn = document.createElement("button");
-    btn.innerHTML = "D"+(i+1);
+    btn.innerHTML = labels[i];
     btn.className = "off";
     btn.id = "btn"+i;
 
@@ -118,6 +119,14 @@ for(let i=0;i<8;i++){
     };
 
     container.appendChild(btn);
+    buttons.push(btn);
+}
+
+// GET STATE FROM SERVER
+async function getState(){
+    let res = await fetch("control.php");
+    let text = await res.text();
+    return text.split(",").map(Number);
 }
 
 // TOGGLE PIN
@@ -141,19 +150,24 @@ function send(state){
         &p8=${state[7]}`);
 }
 
-// UPDATE BUTTON UI
+// UPDATE BUTTON COLORS
 function updateButtons(state){
     for(let i=0;i<8;i++){
-        let btn = document.getElementById("btn"+i);
-        btn.className = state[i] ? "on" : "off";
+        buttons[i].className = state[i] ? "on" : "off";
     }
 }
 
-// INIT LOAD
+// INITIAL LOAD
 async function init(){
     let state = await getState();
     updateButtons(state);
 }
+
+// AUTO SYNC (NO PAGE REFRESH → NO BLINK)
+setInterval(async ()=>{
+    let state = await getState();
+    updateButtons(state);
+}, 2000);
 
 // ALL OFF
 function allOff(){
@@ -162,13 +176,6 @@ function allOff(){
     updateButtons(state);
 }
 
-// AUTO REFRESH
-setInterval(async ()=>{
-    let state = await getState();
-    updateButtons(state);
-}, 2000);
-
-// INIT
 init();
 
 // GRAPH
