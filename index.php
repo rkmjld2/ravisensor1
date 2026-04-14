@@ -4,23 +4,20 @@ include 'db.php';
 // ================= STATUS (ID CHANGE METHOD - FINAL FIX) =================
 $status = "DISCONNECTED";
 
-$res = $conn->query("SELECT id FROM sensor_db ORDER BY id DESC LIMIT 1");
+$res = $conn->query("SELECT timestamp FROM sensor_db ORDER BY id DESC LIMIT 1");
 $last = $res->fetch_assoc();
 
 if($last){
-    $last_id = $last['id'];
+    // current UTC time
+    $now = gmdate("Y-m-d H:i:s");
 
-    // small delay to check new data
-    usleep(500000); // 0.5 second
+    // difference in seconds
+    $diff = abs(strtotime($now) - strtotime($last['timestamp']));
 
-    $res2 = $conn->query("SELECT id FROM sensor_db ORDER BY id DESC LIMIT 1");
-    $new = $res2->fetch_assoc();
-
-    if($new['id'] > $last_id){
+    if($diff < 60){   // 1 minute window
         $status = "CONNECTED";
     }
 }
-
 // ================= GRAPH DATA =================
 $result = $conn->query("SELECT * FROM sensor_db ORDER BY id DESC LIMIT 50");
 
