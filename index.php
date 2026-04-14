@@ -44,6 +44,8 @@ foreach($data as $row){
 <title>Sensor Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<meta http-equiv="refresh" content="10">   <!-- ✅ ADD THIS -->
+
 <style>
 body{font-family:Arial;background:#f4f6f8;padding:20px;}
 .card{background:white;padding:15px;margin-bottom:20px;border-radius:10px;}
