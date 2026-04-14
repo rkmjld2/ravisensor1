@@ -91,7 +91,7 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 <td><?= $row['sensor1'] ?></td>
 <td><?= $row['sensor2'] ?></td>
 <td><?= $row['sensor3'] ?></td>
-<td><?= $row['timestamp'] ?></td>
+<td><?= date("Y-m-d H:i:s", strtotime($row['timestamp']) + 19800) ?></td>
 </tr>
 <?php endforeach; ?>
 
