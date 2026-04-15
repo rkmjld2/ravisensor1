@@ -49,7 +49,7 @@ if(isset($_GET['set']))
         p5=$p5, p6=$p6, p7=$p7, p8=$p8
         WHERE id=1");
 
-    echo "OK";
+   // echo "OK";
     exit;
 }
 
