@@ -101,16 +101,15 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 </div>
 
 <script>
-
-// PIN LABELS (MATCH ESP)
-//let labels = ["D1","D2","D5","D6","D7","D8","D0","D4"];
+// PIN LABELS
 let labels = ["D0","D1","D2","D3","D4","D5","D6","D7"];
-let buttons = [];
-let currentState = [0,0,0,0,0,0,0,0];
 
-// CREATE BUTTONS
+let buttons = [];
+let currentState = [0,0,0,0,0,0,0,0];   // ✅ GLOBAL STATE
+
 let container = document.getElementById("buttons");
 
+// CREATE BUTTONS
 for(let i=0;i<8;i++){
     let btn = document.createElement("button");
     btn.innerHTML = labels[i];
@@ -125,62 +124,59 @@ for(let i=0;i<8;i++){
     buttons.push(btn);
 }
 
-// GET STATE
-async function getState(){
-    let res = await fetch("control.php");
-    let text = await res.text();
-    return text.split(",").map(Number);
-}
-
-// FAST TOGGLE (NO DELAY)
+// TOGGLE PIN (NO RESET ISSUE)
 function togglePin(i){
     currentState[i] = currentState[i] ? 0 : 1;
 
-    updateButtons(currentState);   // instant UI
-    send(currentState);            // background send
+    updateButtons();
+    send();   // send FULL state
 }
 
-// SEND
-function send(state){
+// SEND FULL STATE (IMPORTANT)
+function send(){
     fetch(`control.php?set=1
-        &p1=${state[0]}
-        &p2=${state[1]}
-        &p3=${state[2]}
-        &p4=${state[3]}
-        &p5=${state[4]}
-        &p6=${state[5]}
-        &p7=${state[6]}
-        &p8=${state[7]}`);
+        &p1=${currentState[0]}
+        &p2=${currentState[1]}
+        &p3=${currentState[2]}
+        &p4=${currentState[3]}
+        &p5=${currentState[4]}
+        &p6=${currentState[5]}
+        &p7=${currentState[6]}
+        &p8=${currentState[7]}`);
 }
 
-// UPDATE UI
-function updateButtons(state){
+// UPDATE BUTTON COLORS
+function updateButtons(){
     for(let i=0;i<8;i++){
-        buttons[i].className = state[i] ? "on" : "off";
+        buttons[i].className = currentState[i] ? "on" : "off";
     }
 }
 
-// INIT LOAD
+// INITIAL LOAD FROM SERVER
 async function init(){
-    currentState = await getState();
-    updateButtons(currentState);
+    let res = await fetch("control.php");
+    let text = await res.text();
+    currentState = text.split(",").map(Number);
+
+    updateButtons();
 }
 
-// AUTO SYNC
+// AUTO SYNC (NO RESET)
 setInterval(async ()=>{
-    currentState = await getState();
-    updateButtons(currentState);
+    let res = await fetch("control.php");
+    let text = await res.text();
+    currentState = text.split(",").map(Number);
+    updateButtons();
 }, 2000);
 
 // ALL OFF
 function allOff(){
     currentState = [0,0,0,0,0,0,0,0];
-    send(currentState);
-    updateButtons(currentState);
+    updateButtons();
+    send();
 }
 
 init();
-
 // GRAPH
 new Chart(document.getElementById('chart'),{
     type:'line',
