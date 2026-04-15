@@ -103,8 +103,8 @@ th,td{border:1px solid #ddd;padding:8px;text-align:center;}
 <script>
 
 // PIN LABELS (MATCH ESP)
-let labels = ["D1","D2","D5","D6","D7","D8","D0","D4"];
-
+//let labels = ["D1","D2","D5","D6","D7","D8","D0","D4"];
+let labels = ["D0","D1","D2","D3","D4","D5","D6","D7"];
 let buttons = [];
 let currentState = [0,0,0,0,0,0,0,0];
 
