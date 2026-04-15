@@ -18,9 +18,9 @@ if ($s1 || $s2 || $s3) {
     exit;
 }
 
-// Read control state from TiDB for display
+// Read control state from TiDB - FIXED mysqli
 $res = $conn->query("SELECT * FROM control WHERE id=1");
-$row = $conn->fetch_assoc();
+$row = $res->fetch_assoc();  // <- CORRECT: $res->fetch_assoc()
 ?>
 <!DOCTYPE html>
 <html>
@@ -42,28 +42,34 @@ $row = $conn->fetch_assoc();
 <div style="background: #e0f7fa; padding: 15px; margin: 10px 0;">
     <strong>Current DB State (ESP reads this):</strong> 
     <?php
-    echo "P1:{$row['p1']} P2:{$row['p2']} P3:{$row['p3']} P4:{$row['p4']} ";
-    echo "P5:{$row['p5']} P6:{$row['p6']} P7:{$row['p7']} P8:{$row['p8']}";
+    if ($row) {
+        echo "P1:{$row['p1']} P2:{$row['p2']} P3:{$row['p3']} P4:{$row['p4']} ";
+        echo "P5:{$row['p5']} P6:{$row['p6']} P7:{$row['p7']} P8:{$row['p8']}";
+    } else {
+        echo "No control data - check control table";
+    }
     ?>
 </div>
 
-<!-- 8 Toggle Buttons -->
-<form method="GET" action="control.php" style="margin: 20px 0;">
-    <input type="hidden" name="set" value="1">
-    
-    <?php
-    $pin_names = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'];
-    for ($i = 1; $i <= 8; $i++) {
-        $p = 'p' . $i;
-        $status = $row[$p] ? 'on' : 'off';
-        echo "<div class='pin $status'>";
-        echo "<strong>{$pin_names[$i-1]}</strong><br>";
-        echo "<button type='submit' name='$p' value='1' style='background: #4CAF50; color:white;'>ON</button>";
-        echo "<button type='submit' name='$p' value='0' style='background: #f44336; color:white;'>OFF</button>";
-        echo "</div>";
-    }
-    ?>
-</form>
+<!-- 8 Toggle Buttons - individual submit -->
+<?php
+$pin_names = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'];
+for ($i = 1; $i <= 8; $i++) {
+    $p = 'p' . $i;
+    $status = ($row && $row[$p]) ? 'on' : 'off';
+    echo "<div class='pin $status'>";
+    echo "<strong>{$pin_names[$i-1]}</strong><br>";
+    echo "<form method='GET' action='control.php' style='display:inline;'>";
+    echo "<input type='hidden' name='set' value='1'>";
+    echo "<button type='submit' name='$p' value='1' style='background: #4CAF50; color:white;'>ON</button>";
+    echo "</form>";
+    echo "<form method='GET' action='control.php' style='display:inline;'>";
+    echo "<input type='hidden' name='set' value='1'>";
+    echo "<button type='submit' name='$p' value='0' style='background: #f44336; color:white;'>OFF</button>";
+    echo "</form>";
+    echo "</div>";
+}
+?>
 
 <p><small>Auto-refresh every 10s. ESP syncs every 5s.</small></p>
 </body>
